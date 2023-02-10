@@ -1,0 +1,15 @@
+matplotlib
+backtrader
+backtrader-plotting
+yahoo-fin
+pre-commit
+ccxt
+pandas
+# stock data
+nasdaq-data-link
+pandas-datareader
+backtesting
+pandas_ta
+pandas_datareader
+
+pycrypto
