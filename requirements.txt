@@ -1,15 +1,18 @@
-matplotlib
+backtesting
 backtrader
 backtrader-plotting
-yahoo-fin
-pre-commit
 ccxt
-pandas
+dash
+dash-daq
+
+dash_bootstrap_components
+gunicorn>=19.9.0
+matplotlib
 # stock data
 nasdaq-data-link
+pandas
 pandas-datareader
-backtesting
-pandas_ta
 pandas_datareader
-
-pycrypto
+pandas_ta
+pre-commit
+yahoo-fin
