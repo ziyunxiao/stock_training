@@ -14,6 +14,14 @@
             "justMyCode": true
         },
         {
+            "name": "app.py",
+            "type": "python",
+            "request": "launch",
+            "program": "app.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "name": "test.py",
             "type": "python",
             "request": "launch",
