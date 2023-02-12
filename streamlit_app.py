@@ -102,7 +102,12 @@ def construct_settings():
     # st.sidebar.write('Your birthday is:', d)
 
     st.sidebar.number_input(
-        "Initial Funds", min_value=10000, max_value=1000000, value=100000, format="%i"
+        "Initial Funds",
+        min_value=10000,
+        max_value=1000000,
+        value=100000,
+        format="%d",
+        step=10000,
     )
     st.sidebar.number_input(
         "Funds/trade", value=10000, format="%d", key="input_fund_per_trade", step=1000
