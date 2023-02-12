@@ -23,13 +23,15 @@ def load_data(ticker: str, start: str) -> pd.DataFrame:
 
 
 def get_chart(df: pd.DataFrame):
-    qf = cf.QuantFig(df, title="First Quant Figure", legend="top", name="GS")
+    qf = cf.QuantFig(df, title="Storck Quant Figure", legend="top", name="GS")
 
-    qf.add_sma([10, 20], width=2, color=["green", "lightgreen"], legendgroup=True)
-    qf.add_rsi(periods=20, color="java")
-    qf.add_bollinger_bands(
-        periods=20, boll_std=2, colors=["magenta", "grey"], fill=True
+    qf.add_sma(
+        [5, 10, 55], width=2, colors=["green", "orange", "blue"], legendgroup=True
     )
+    # qf.add_rsi(periods=20, color="java")
+    # qf.add_bollinger_bands(
+    #     periods=20, boll_std=2, colors=["magenta", "grey"], fill=True
+    # )
     qf.add_volume()
     qf.add_macd()
     fig = qf.iplot(asFigure=True)
@@ -99,6 +101,28 @@ def construct_settings():
     d = st.sidebar.date_input("Start Date", date(2010, 1, 1), key="input_date_start")
     # st.sidebar.write('Your birthday is:', d)
 
+    st.sidebar.number_input(
+        "Initial Funds", min_value=10000, max_value=1000000, value=100000, format="%i"
+    )
+    st.sidebar.number_input(
+        "Funds/trade", value=10000, format="%d", key="input_fund_per_trade", step=1000
+    )
+
+
+def construct_chart_section(df: pd.DataFrame):
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.write("Ticker:", st.session_state.input_ticker)
+
+    with col2:
+        st.write("Start:", st.session_state.input_date_start)
+
+    with col3:
+        ...
+
+    fig = get_chart(df)
+    st.plotly_chart(fig, use_container_width=True)
+
 
 def main() -> None:
     st.sidebar.subheader("Settings")
@@ -137,11 +161,7 @@ def main() -> None:
     # Display chart
     df = filter_data(df)
     st.subheader("Charts")
-    st.write("Ticker:", st.session_state.input_ticker)
-    st.write("Start:", st.session_state.input_date_start)
-
-    fig = get_chart(df)
-    st.plotly_chart(fig, use_container_width=True)
+    construct_chart_section(df)
 
 
 if __name__ == "__main__":
