@@ -16,3 +16,8 @@ pandas_datareader
 pandas_ta
 pre-commit
 yahoo-fin
+
+plotly
+streamlit
+streamlit-aggrid
+cufflinks
