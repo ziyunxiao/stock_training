@@ -17,7 +17,7 @@ pandas_ta
 pre-commit
 yahoo-fin
 
-plotly
-streamlit
-streamlit-aggrid
-cufflinks
+plotly>=5.13.0
+streamlit>=1.18.1
+streamlit-aggrid>=0.3.3
+cufflinks>=0.17.3
