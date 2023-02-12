@@ -17,9 +17,10 @@
       "type": "python",
       "request": "launch",
       "module": "streamlit",
-      "args": ["run", "streamlit_app.py"],
+      "args": ["run", "streamlit_app.py","--server.port","8000"],
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": true,
+
     },
     {
       "name": "test.py",

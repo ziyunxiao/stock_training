@@ -14,6 +14,9 @@ from st_aggrid.shared import JsCode
 
 setattr(plotly.offline, "__PLOTLY_OFFLINE_INITIALIZED", True)
 
+# Global variables
+log_text = "test"
+
 
 @st.cache_data
 def load_data(ticker: str, start: str) -> pd.DataFrame:
@@ -91,7 +94,8 @@ def filter_data(df: pd.DataFrame, start: date = None, end: date = None) -> pd.Da
     return df
 
 
-def construct_settings():
+def construct_sidebar():
+    st.sidebar.subheader("Settings")
     option = st.sidebar.selectbox(
         "Ticker",
         ("MSFT", "SQQQ", "TQQQ"),
@@ -113,6 +117,18 @@ def construct_settings():
         "Funds/trade", value=10000, format="%d", key="input_fund_per_trade", step=1000
     )
 
+    st.sidebar.subheader("Account Summary")
+    st.sidebar.metric(
+        "Total",
+        f"${100000:,d}",
+        f"{20:.2f}",
+    )
+
+    st.sidebar.metric(
+        "Percentage",
+        f"${110}%",
+    )
+
 
 def construct_chart_section(df: pd.DataFrame):
     col1, col2, col3 = st.columns(3)
@@ -125,14 +141,27 @@ def construct_chart_section(df: pd.DataFrame):
     with col3:
         ...
 
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.button("Next Day", key="btn_next_day", on_click=btn_next_day_click)
+
+    with col2:
+        st.button("Buy", key="btn_buy")
+
+    with col3:
+        st.button("Sell", key="btn_sell")
+
     fig = get_chart(df)
     st.plotly_chart(fig, use_container_width=True)
 
 
+def btn_next_day_click():
+    ...
+
+
 def main() -> None:
-    st.sidebar.subheader("Settings")
     # todo Settings
-    construct_settings()
+    construct_sidebar()
 
     st.header("Stock trading traing :moneybag: :dollar: :bar_chart:")
 
@@ -167,6 +196,9 @@ def main() -> None:
     df = filter_data(df)
     st.subheader("Charts")
     construct_chart_section(df)
+
+    with st.expander("logging"):
+        st.text_area(label="", value=log_text, key="input_text_area1")
 
 
 if __name__ == "__main__":
