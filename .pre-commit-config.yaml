@@ -26,5 +26,5 @@ repos:
     hooks:
     - id: flake8
       exclude: 'tests|env|docs,api/test1.py'
-      args: ['--config=setup.cfg','--ignore=F401,F841,W503, E501','--max-line-length=120']
+      args: ['--config=setup.cfg','--ignore=F401,F841,W503, E501, E203','--max-line-length=120']
       additional_dependencies: [flake8-isort]
