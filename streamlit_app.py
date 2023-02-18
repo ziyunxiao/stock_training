@@ -219,6 +219,8 @@ def construct_sidebar():
 
 
 def construct_chart_section(df: pd.DataFrame):
+    item = df.iloc[-1]
+
     col1, col2, col3, col4, col5 = st.columns(5)
     account_summary = st.session_state.account_summary
     with col1:
@@ -226,7 +228,7 @@ def construct_chart_section(df: pd.DataFrame):
     with col2:
         st.write("Current Date:", st.session_state.input_date_end)
     with col3:
-        st.write("Current Price:", round(account_summary.get("current_price", 0), 4))
+        st.write("Current Price:", round(item.get("Close"), 4))
     with col4:
         st.write("Holding Shares:", account_summary["current_holding_shares"])
     with col5:
@@ -238,19 +240,21 @@ def construct_chart_section(df: pd.DataFrame):
     with col2:
         st.button("Next 5 Days", key="btn_next_5days", on_click=btn_next_5days_click)
     with col3:
-        st.write("Trade Message:", st.session_state.get("trade_message", ""))
-    with col4:
         st.write("Stop Price:", round(account_summary.get("stop_price", 0), 4))
-    with col5:
+    with col4:
         st.write(
             "Avg Cost:", round(account_summary.get("current_avg_trade_cost", 0), 4)
         )
+    with col5:
+        st.write("Trade Message:", st.session_state.get("trade_message", ""))
 
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
         st.button("Buy", key="btn_buy", on_click=btn_buy_click)
     with col2:
         st.button("Sell", key="btn_sell", on_click=btn_sell_click)
+    with col3:
+        st.write("Low Price:", round(item.get("Low"), 4))
 
     fig = get_chart(df)
     fig.update_layout(height=1000)
@@ -259,6 +263,34 @@ def construct_chart_section(df: pd.DataFrame):
 
 def p2f(x):
     return float(x.strip("%")) / 100
+
+
+def check_stop_price():
+    global df, df2
+
+    account_summary = st.session_state["account_summary"]
+    if account_summary["current_holding_shares"] == 0:
+        # nothing to do
+        return
+
+    i_end = st.session_state.filter_end
+    current_item = df2.iloc[-1]
+    next_item = df.iloc[i_end + 1]
+    price = current_item["Low"]
+    trade_fee = st.session_state.trade_fee
+    stop_price = account_summary["stop_price"]
+
+    if price < stop_price:
+        # sell
+        cash_sold = account_summary["current_holding_shares"] * price
+        account_summary["available_funds"] += cash_sold - trade_fee
+        account_summary["current_holding_shares"] = 0
+        account_summary["current_avg_trade_cost"] = 0
+        account_summary["stop_price"] = 0
+
+        st.session_state["account_summary"] = account_summary
+        st.session_state["trade_message"] = "Sucessful"
+        cal_account_summary()
 
 
 def btn_sell_click():
