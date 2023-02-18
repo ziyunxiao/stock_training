@@ -270,6 +270,18 @@ def btn_sell_click():
         price = current_item["Low"]
     else:
         price = next_item["Open"]
+    trade_fee = st.session_state.trade_fee
+
+    account_summary = st.session_state["account_summary"]
+    cash_sold = account_summary["current_holding_shares"] * price
+    account_summary["available_funds"] += cash_sold - trade_fee
+    account_summary["current_holding_shares"] = 0
+    account_summary["current_avg_trade_cost"] = 0
+    account_summary["stop_price"] = 0
+
+    st.session_state["account_summary"] = account_summary
+    st.session_state["trade_message"] = "Sucessful"
+    cal_account_summary()
 
 
 def btn_buy_click():
