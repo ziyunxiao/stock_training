@@ -4,7 +4,7 @@ import logging
 import math
 import os
 import pickle
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 import cufflinks as cf
@@ -26,37 +26,44 @@ logger.info("appp start")
 
 # Global variables
 const_date_range = 120
-if "input_init_funds" not in st.session_state:
-    st.session_state["input_init_funds"] = 100000
-
-if "account_summary" not in st.session_state:
-    st.session_state["account_summary"] = {
-        "total": st.session_state["input_init_funds"],
-        "total_delta": 0,
-        "total_percent": 100,
-        "trade_sequence": 0,
-        "available_funds": st.session_state["input_init_funds"],
-        "current_holding_shares": 0,
-        "current_holding_value": 0,
-        "current_avg_trade_cost": 0,
-    }
-
-if "log_text" not in st.session_state:
-    st.session_state["log_text"] = ""
-
-if "trade_price" not in st.session_state:
-    st.session_state["trade_price"] = "next day"
-
-if "stop_price" not in st.session_state:
-    st.session_state["stop_price"] = "10%"
-
-if "filter_start" not in st.session_state:
-    st.session_state["filter_start"] = 0
-    st.session_state["filter_end"] = const_date_range
 
 
-@st.cache_data
-def load_data(ticker: str, start: str) -> pd.DataFrame:
+def init_vars(dt: dict = None):
+    if dt is None:
+        dt = {}
+
+    if "input_init_funds" not in st.session_state:
+        st.session_state["input_init_funds"] = dt.get("input_init_funds", 100000)
+
+    if "account_summary" not in st.session_state:
+        account_summary = {
+            "total": st.session_state["input_init_funds"],
+            "total_delta": 0,
+            "total_percent": 100,
+            "trade_sequence": 0,
+            "available_funds": st.session_state["input_init_funds"],
+            "current_holding_shares": 0,
+            "current_holding_value": 0,
+            "current_avg_trade_cost": 0,
+        }
+        st.session_state["account_summary"] = dt.get("account_summary", account_summary)
+
+    if "log_text" not in st.session_state:
+        st.session_state["log_text"] = ""
+
+    if "trade_price" not in st.session_state:
+        st.session_state["trade_price"] = dt.get("trade_price", "next day")
+
+    if "stop_price" not in st.session_state:
+        st.session_state["stop_price"] = dt.get("stop_price", "10%")
+
+    if "filter_start" not in st.session_state:
+        st.session_state["filter_start"] = dt.get("filter_start", 0)
+        st.session_state["filter_end"] = dt.get("filter_end", const_date_range)
+
+
+# @st.cache_data
+def load_data(ticker: str, start) -> pd.DataFrame:
     # todo change to load data from yfinance
     msft = yf.Ticker(ticker)
     # get all stock info (slow)
@@ -68,13 +75,16 @@ def load_data(ticker: str, start: str) -> pd.DataFrame:
     if os.path.exists(cache):
         hist1 = pd.read_parquet(cache)
         t1 = hist1.index[-1]
-        hist2 = hist = msft.history(period="1d", start=t1)
-        hist = pd.concat([hist1[:-1], hist2])
+        hist2 = msft.history(period="1d", start=t1)
+        df = pd.concat([hist1[:-1], hist2])
     else:
-        hist = msft.history(period="1d", start=start)
+        df = msft.history(period="1d", start=start)
 
-    df = pd.DataFrame(hist)
     df.to_parquet(f"./data/{ticker}.parquet")
+
+    item = df.index[0]
+    i_start = pd.Timestamp(start, tz=item.tz)
+    df = df[df.index >= i_start]
 
     # df = cf.datagen.ohlcv()
     return df
@@ -98,7 +108,6 @@ def get_chart(df: pd.DataFrame):
     return fig
 
 
-@st.cache_data
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     Take Raw Fidelity Dataframe and return usable dataframe.
@@ -173,13 +182,13 @@ def construct_sidebar():
     st.sidebar.subheader("Account Summary")
     st.sidebar.metric(
         "Total",
-        f"${st.session_state.account_summary['total']:,.2f}",
-        f"{st.session_state.account_summary['total_delta']:.2f}",
+        f"${st.session_state.get('account_summary')['total']:,.2f}",
+        f"{st.session_state.get('account_summary')['total_delta']:.2f}",
     )
 
     st.sidebar.metric(
         "Percentage",
-        f"${st.session_state.account_summary['total_percent']}%",
+        f"${st.session_state.get('account_summary')['total_percent']}%",
     )
 
     st.sidebar.subheader("Settings")
@@ -196,7 +205,7 @@ def construct_sidebar():
         "Initial Funds",
         min_value=10000,
         max_value=1000000,
-        value=st.session_state.input_init_funds,
+        value=st.session_state.get("input_init_funds"),
         format="%d",
         step=10000,
         key="input_init_funds",
@@ -222,11 +231,11 @@ def construct_chart_section(df: pd.DataFrame):
     item = df.iloc[-1]
 
     col1, col2, col3, col4, col5 = st.columns(5)
-    account_summary = st.session_state.account_summary
+    account_summary = st.session_state.get("account_summary")
     with col1:
-        st.write("Ticker:", st.session_state.input_ticker)
+        st.write("Ticker:", st.session_state.get("input_ticker"))
     with col2:
-        st.write("Current Date:", st.session_state.input_date_end)
+        st.write("Current Date:", st.session_state.get("input_date_end"))
     with col3:
         st.write("Current Price:", round(item.get("Close"), 4))
     with col4:
@@ -236,9 +245,9 @@ def construct_chart_section(df: pd.DataFrame):
 
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.button("Next Day", key="btn_next_day", on_click=btn_next_day_click)
+        st.button("Load", on_click=btn_load_click)
     with col2:
-        st.button("Next 5 Days", key="btn_next_5days", on_click=btn_next_5days_click)
+        st.button("Save", on_click=btn_save_click)
     with col3:
         st.write("Stop Price:", round(account_summary.get("stop_price", 0), 4))
     with col4:
@@ -250,11 +259,15 @@ def construct_chart_section(df: pd.DataFrame):
 
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.button("Buy", key="btn_buy", on_click=btn_buy_click)
+        st.button("Buy", on_click=btn_buy_click)
     with col2:
-        st.button("Sell", key="btn_sell", on_click=btn_sell_click)
+        st.button("Sell", on_click=btn_sell_click)
     with col3:
         st.write("Low Price:", round(item.get("Low"), 4))
+    with col4:
+        st.button("Next Day", on_click=btn_next_day_click)
+    with col5:
+        st.button("Next 5 Days", on_click=btn_next_5days_click)
 
     fig = get_chart(df)
     fig.update_layout(height=1000)
@@ -263,6 +276,20 @@ def construct_chart_section(df: pd.DataFrame):
 
 def p2f(x):
     return float(x.strip("%")) / 100
+
+
+def btn_save_click():
+    dt = st.session_state.to_dict()
+    pickle.dump(dt, open("./data/session.pkl", "wb"))
+
+
+def btn_load_click():
+    dt = pickle.load(open("./data/session.pkl", "rb"))
+    # init_vars(dt)
+    for k in dt:
+        st.session_state[k] = dt[k]
+
+    return
 
 
 def check_stop_price():
@@ -420,6 +447,9 @@ def btn_next_5days_click():
 
 def main() -> None:
     global df, df1, df2
+
+    init_vars()
+
     # todo Settings
     construct_sidebar()
 
@@ -447,16 +477,18 @@ def main() -> None:
         st.write(df1)
 
     # Display chart
-    i_start = st.session_state.filter_start
-    i_end = st.session_state.filter_end
+    i_start = st.session_state.get("filter_start")
+    i_end = st.session_state.get("filter_end")
     df2 = filter_data(df1, i_start, i_end)
-    st.session_state.input_date_end = df2.index[-1].strftime("%Y-%m-%d")
+    st.session_state["input_date_end"] = df2.index[-1].strftime("%Y-%m-%d")
 
     st.subheader("Charts")
     construct_chart_section(df2)
 
     with st.expander("logging"):
-        st.text_area(label="", value=st.session_state.log_text, key="input_text_area1")
+        st.text_area(
+            label="", value=st.session_state.get("log_text"), key="input_text_area1"
+        )
 
 
 if __name__ == "__main__":
